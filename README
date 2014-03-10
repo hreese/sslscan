@@ -1,7 +1,5 @@
 This is a fork of sslscan.c to better support STARTTLS.
 
-This is a fork of the fork that adds a switch to specify the XMPP-Domain.
-
 The original home page of sslscan is:
 
     http://www.titania.co.uk
