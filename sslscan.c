@@ -119,6 +119,7 @@ struct sslCheckOptions
     int starttls_smtp;
     int starttls_xmpp;
     char *xmpp_domain;
+    int socket_timeout;
     int sslVersion;
     int targets;
     int pout;
@@ -271,6 +272,7 @@ int tcpConnect(struct sslCheckOptions *options)
     int tlsStarted = 0;
     char buffer[BUFFERSIZE];
     int status;
+    struct timeval timeout;
 
     // Create Socket
     socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -278,6 +280,19 @@ int tcpConnect(struct sslCheckOptions *options)
     {
         printf("%s    ERROR: Could not open a socket.%s\n", COL_RED, RESET);
         return 0;
+    }
+
+    // set socket timeout
+    if (options->socket_timeout > 0) {
+        timeout.tv_sec = options->socket_timeout;
+        timeout.tv_usec = 0;
+
+        if (setsockopt (socketDescriptor, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+            printf("%s    WARNING: Unable to set receive timeout.%s\n", COL_RED, RESET);
+        }
+        if (setsockopt (socketDescriptor, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+            printf("%s    WARNING: Unable to set receive timeout.%s\n", COL_RED, RESET);
+        }
     }
 
     // Connect
@@ -1960,6 +1975,12 @@ int main(int argc, char *argv[])
         else if (strcmp("--http", argv[argLoop]) == 0)
             options.http = 1;
 
+        // Socket Timeout
+        else if ((strncmp("--timeout=", argv[argLoop], 10) == 0) && (strlen(argv[argLoop]) > 10))
+        {
+            options.socket_timeout = atoi(argv[argLoop] + 10);
+        }
+
         // Host (maybe port too)...
         else if (argLoop + 1 == argc)
         {
@@ -2059,6 +2080,7 @@ int main(int argc, char *argv[])
             printf("  %s--bugs%s               Enable SSL implementation  bug work-\n", COL_GREEN, RESET);
             printf("                       arounds.\n");
             printf("  %s--xml=<file>%s         Output results to an XML file.\n", COL_GREEN, RESET);
+            printf("  %s--timeout=<seconds>%s  Set timeout in seconds.\n", COL_GREEN, RESET);
             printf("  %s--version%s            Display the program version.\n", COL_GREEN, RESET);
             printf("  %s--verbose%s            Display verbose output.\n", COL_GREEN, RESET);
             printf("  %s--help%s               Display the  help text  you are  now\n", COL_GREEN, RESET);
